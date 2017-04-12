@@ -23,7 +23,6 @@ void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
 
 void KalmanFilter::Predict() {
   /**
-  TODO:
     * predict the state
   */
   x_ = F_ * x_;
@@ -33,16 +32,14 @@ void KalmanFilter::Predict() {
 
 void KalmanFilter::Update(const VectorXd &z) {
   /**
-  TODO:
     * update the state by using Kalman Filter equations
   */
   VectorXd z_pred = H_ * x_;
   VectorXd y = z - z_pred;
   MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_; // TODO: use R_laser here
+  MatrixXd S = H_ * P_ * Ht + R_;
   MatrixXd Si = S.inverse();
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
+  MatrixXd K = P_ * Ht * Si;
 
   //new estimate
   x_ = x_ + (K * y);
@@ -53,24 +50,31 @@ void KalmanFilter::Update(const VectorXd &z) {
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
   /**
-  TODO:
     * update the state by using Extended Kalman Filter equations
   */
 
+  // Convert to polar coordinates
   float rho = sqrt(x_[0]*x_[0] + x_[1]*x_[1]);
   float phi = atan2(x_[1], x_[0]);
   float rhodot = (x_[0]*x_[2] + x_[1]*x_[3]) / rho;
-  //cout << "rho: " << rho << "\tphi: " << phi << "\trhodot: " << rhodot << endl;
+    //cout << "rho: " << rho << "\tphi: " << phi << "\trhodot: " << rhodot << endl;
   VectorXd z_pred(3);
   z_pred << rho , phi, rhodot;
+
   VectorXd y = z - z_pred;
   //cout << "y: " << y << endl;
+
   Tools tool;
   MatrixXd Hj = tool.CalculateJacobian(x_);
   //cout << "Hj: " << Hj << endl;
+
   MatrixXd Hjt = Hj.transpose();
+
   MatrixXd S = Hj * P_ * Hjt + R_;
   //cout << "S: " << S << endl;
+
+  // Check if S is invertable, if not, don't update
+  // TODO: Check if no update is a good strategy here
   Eigen::FullPivLU<MatrixXd> lu(S);
   if (!lu.isInvertible())
   {
@@ -78,8 +82,8 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   }
   MatrixXd Si = S.inverse();
   //cout << "Si: " << Si << endl;
-  MatrixXd PHjt = P_ * Hjt;
-  MatrixXd K = PHjt * Si;
+
+  MatrixXd K = P_ * Hjt * Si;
   //cout << "K: " << K << endl;
 
   x_ = x_ + (K * y);
