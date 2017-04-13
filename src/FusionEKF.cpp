@@ -43,8 +43,8 @@ FusionEKF::FusionEKF() {
   Eigen::MatrixXd P_in = MatrixXd(4, 4);
   P_in << 1, 0, 0, 0,
           0, 1, 0, 0,
-          0, 0, 10, 0,
-          0, 0, 0, 10;
+          0, 0, 1000, 0,
+          0, 0, 0, 1000;
 
   //measurement covariance
   Eigen::MatrixXd R_in = MatrixXd(2, 2);
@@ -91,10 +91,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       */
       float rho = measurement_pack.raw_measurements_[0];
       float phi = measurement_pack.raw_measurements_[1];
-      //float rho_dot = measurement_pack.raw_measurements_[2];
+      float rho_dot = measurement_pack.raw_measurements_[2];
       float px = rho * cos(phi);
       float py = rho * sin(phi);
-      ekf_.x_ << px, -py, 0, 0;
+      ekf_.x_ << px, py, rho_dot*cos(phi), rho_dot*sin(phi);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
@@ -103,6 +103,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
     }
 
+    previous_timestamp_ = measurement_pack.timestamp_;
     // done initializing, no need to predict or update
     is_initialized_ = true;
     return;
