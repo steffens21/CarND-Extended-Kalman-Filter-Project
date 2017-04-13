@@ -38,6 +38,13 @@ void KalmanFilter::Update(const VectorXd &z) {
   VectorXd y = z - z_pred;
   MatrixXd Ht = H_.transpose();
   MatrixXd S = H_ * P_ * Ht + R_;
+  // Check if S is invertable, if not, don't update
+  // TODO: Check if no update is a good strategy here
+  Eigen::FullPivLU<MatrixXd> lu(S);
+  if (!lu.isInvertible())
+  {
+    return void();
+  }
   MatrixXd Si = S.inverse();
   MatrixXd K = P_ * Ht * Si;
 
@@ -65,6 +72,12 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   //cout << "y: " << y << endl;
 
   Tools tool;
+  float c1 = x_(0)*x_(0)+x_(1)*x_(1);
+  //check division by zero would occur in Jacobian calculation.  If so, don't update x and P
+  if(fabs(c1) < 0.001){
+    return void();
+  }
+
   MatrixXd Hj = tool.CalculateJacobian(x_);
   //cout << "Hj: " << Hj << endl;
 
