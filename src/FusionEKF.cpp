@@ -97,6 +97,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       float rho_dot = measurement_pack.raw_measurements_[2];
       float px = rho * cos(phi);
       float py = rho * sin(phi);
+      // The last 2 components can also be initalized to 0, 0
       ekf_.x_ << px, py, rho_dot*cos(phi), rho_dot*sin(phi);
     } else if ( measurement_pack.sensor_type_ == MeasurementPackage::LASER ) {
       /**
@@ -108,6 +109,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     }
 
     previous_timestamp_ = measurement_pack.timestamp_;
+
     // Done initializing, no need to predict or update
     is_initialized_ = true;
     return;
